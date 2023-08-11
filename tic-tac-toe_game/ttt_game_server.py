@@ -1,7 +1,7 @@
 def print_board(board):
     for row in board:
         print(' | '.join(row))
-        print('-' * 101)
+        print('-' * 10)
 
 def is_winner(board, player):
     # Check rows, columns, and diagonals
