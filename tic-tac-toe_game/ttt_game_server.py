@@ -1,3 +1,5 @@
+import socket
+
 def print_board(board):
     for row in board:
         print(' | '.join(row))
@@ -18,34 +20,69 @@ def is_winner(board, player):
 def is_draw(board):
     return all(all(cell != ' ' for cell in row) for row in board)
 
-def main():
+def handle_game(client1, client2):
+    players = {'X': client1, 'O': client2}
     board = [[' ' for _ in range(3)] for _ in range(3)]
-    players = ['X', 'O']
     turn = 0
+    symbols = 'XO'
 
     while True:
-        print_board(board)
-        print(f"Player {players[turn % 2]}'s turn:")
-        row = int(input("Enter row (0-2): "))
-        col = int(input("Enter column (0-2): "))
+        current_player = symbols[turn % 2]
+        opponent_player = symbols[(turn + 1) % 2]
+        client1.sendall(board, current_player)
+        client2.sendall(board, opponent_player)
+
+        row, col = players[current_player].recv_move()
 
         if board[row][col] != ' ':
-            print("Cell is already occupied. Try again.")
             continue
 
-        board[row][col] = players[turn % 2]
+        board[row][col] = current_player
 
-        if is_winner(board, players[turn % 2]):
-            print_board(board)
-            print(f"Player {players[turn % 2]} wins!")
+        if is_winner(board, current_player):
+            client1.sendall(board, "WIN" if current_player == 'X' else "LOSE")
+            client2.sendall(board, "WIN" if current_player == 'O' else "LOSE")
             break
 
         if is_draw(board):
-            print_board(board)
-            print("It's a draw!")
+            client1.sendall(board, "DRAW")
+            client2.sendall(board, "DRAW")
             break
 
         turn += 1
+
+class ClientHandler:
+    def __init__(self, conn):
+        self.conn = conn
+
+    def sendall(self, board, status):
+        # Convert the board to a string and send it along with the status
+        data = '\n'.join([' '.join(row) for row in board]) + '\n' + status
+        self.conn.sendall(data.encode())
+
+    def recv_move(self):
+        # Receive the player's move
+        data = self.conn.recv(1024).decode()
+        row, col = map(int, data.strip().split())
+        return row, col
+
+def main():
+    HOST = '127.0.0.1'  # Change to your server's IP address
+    PORT = 65432
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((HOST, PORT))
+        s.listen()
+        print("Waiting for players to connect...")
+        conn1, _ = s.accept()
+        conn2, _ = s.accept()
+        print("Both players connected. Starting the game.")
+
+        client1 = ClientHandler(conn1)
+        client2 = ClientHandler(conn2)
+        handle_game(client1, client2)
+
+        print("Game over.")
 
 if __name__ == "__main__":
     main()
