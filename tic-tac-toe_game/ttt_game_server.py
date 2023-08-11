@@ -67,7 +67,7 @@ class ClientHandler:
         return row, col
 
 def main():
-    HOST = '127.0.0.1'  # Change to your server's IP address
+    HOST = '127.0.0.1'  # server IP address (local host for testing)
     PORT = 65432
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
