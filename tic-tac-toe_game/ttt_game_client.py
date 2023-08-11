@@ -6,7 +6,7 @@ def print_board(board):
         print('-' * 5)
 
 def main():
-    HOST = '192.168.1.239'  # Change to your server's IP address
+    HOST = '192.168.1.239'  # server ip address where the app is hosted
     PORT = 65432
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
